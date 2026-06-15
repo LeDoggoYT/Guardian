@@ -10,7 +10,6 @@ const client = new Client({
     ]
 });
 
-const PREFIX = '!';
 const warnings = new Map();
 
 client.once('ready', () => {
@@ -44,19 +43,20 @@ client.on('messageCreate', async (message) => {
             return message.channel.send({ embeds: [mentionEmbed] });
         }
     }
+});
 
-    if (!message.content.startsWith(PREFIX)) return;
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isChatInputCommand()) return;
 
-    const args = message.content.slice(PREFIX.length).trim().split(/ +/);
-    const command = args.shift().toLowerCase();
+    const { commandName } = interaction;
 
-    if (command === 'warn') {
-        if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) {
-            return message.reply('Du hast keine Berechtigung, diesen Befehl auszuführen.');
+    if (commandName === 'warn') {
+        const target = interaction.options.getMember('target');
+        const reason = interaction.options.getString('reason') || 'Kein Grund angegeben';
+
+        if (!target) {
+            return interaction.reply({ content: 'Nutzer konnte nicht gefunden werden.', ephemeral: true });
         }
-        const target = message.mentions.members.first();
-        if (!target) return message.reply('Bitte erwähne einen Nutzer, den du verwarnen möchtest.');
-        const reason = args.slice(1).join(' ') || 'Kein Grund angegeben';
 
         if (!warnings.has(target.id)) {
             warnings.set(target.id, []);
@@ -70,7 +70,7 @@ client.on('messageCreate', async (message) => {
             .setDescription(`${target} wurde verwarnt.\n\n**Grund:** ${reason}\n**Verwarnungen insgesamt:** ${count}`)
             .setTimestamp();
 
-        message.channel.send({ embeds: [embed] });
+        await interaction.reply({ embeds: [embed] });
 
         if (count >= 3) {
             if (target.kickable) {
@@ -80,20 +80,22 @@ client.on('messageCreate', async (message) => {
                     .setTitle('Automod Eskalation')
                     .setDescription(`${target} wurde nach Erreichen von 3 Verwarnungen automatisch gekickt.`)
                     .setTimestamp();
-                message.channel.send({ embeds: [kickEmbed] });
+                await interaction.channel.send({ embeds: [kickEmbed] });
             }
         }
     }
 
-    if (command === 'kick') {
-        if (!message.member.permissions.has(PermissionsBitField.Flags.KickMembers)) {
-            return message.reply('Du hast keine Berechtigung, Mitglieder zu kicken.');
-        }
-        const target = message.mentions.members.first();
-        if (!target) return message.reply('Bitte erwähne einen Nutzer, den du kicken möchtest.');
-        if (!target.kickable) return message.reply('Dieser Nutzer kann nicht gekickt werden.');
+    if (commandName === 'kick') {
+        const target = interaction.options.getMember('target');
+        const reason = interaction.options.getString('reason') || 'Kein Grund angegeben';
 
-        const reason = args.slice(1).join(' ') || 'Kein Grund angegeben';
+        if (!target) {
+            return interaction.reply({ content: 'Nutzer konnte nicht gefunden werden.', ephemeral: true });
+        }
+        if (!target.kickable) {
+            return interaction.reply({ content: 'Dieser Nutzer kann nicht gekickt werden.', ephemeral: true });
+        }
+
         await target.kick(reason);
 
         const embed = new EmbedBuilder()
@@ -101,18 +103,20 @@ client.on('messageCreate', async (message) => {
             .setTitle('Nutzer gekickt')
             .setDescription(`${target} wurde erfolgreich gekickt.\n\n**Grund:** ${reason}`)
             .setTimestamp();
-        message.channel.send({ embeds: [embed] });
+        await interaction.reply({ embeds: [embed] });
     }
 
-    if (command === 'ban') {
-        if (!message.member.permissions.has(PermissionsBitField.Flags.BanMembers)) {
-            return message.reply('Du hast keine Berechtigung, Mitglieder zu bannen.');
-        }
-        const target = message.mentions.members.first();
-        if (!target) return message.reply('Bitte erwähne einen Nutzer, den du bannen möchtest.');
-        if (!target.bannable) return message.reply('Dieser Nutzer kann nicht gebannt werden.');
+    if (commandName === 'ban') {
+        const target = interaction.options.getMember('target');
+        const reason = interaction.options.getString('reason') || 'Kein Grund angegeben';
 
-        const reason = args.slice(1).join(' ') || 'Kein Grund angegeben';
+        if (!target) {
+            return interaction.reply({ content: 'Nutzer konnte nicht gefunden werden.', ephemeral: true });
+        }
+        if (!target.bannable) {
+            return interaction.reply({ content: 'Dieser Nutzer kann nicht gebannt werden.', ephemeral: true });
+        }
+
         await target.ban({ reason });
 
         const embed = new EmbedBuilder()
@@ -120,20 +124,20 @@ client.on('messageCreate', async (message) => {
             .setTitle('Nutzer gebannt')
             .setDescription(`${target} wurde erfolgreich gebannt.\n\n**Grund:** ${reason}`)
             .setTimestamp();
-        message.channel.send({ embeds: [embed] });
+        await interaction.reply({ embeds: [embed] });
     }
 
-    if (command === 'ticket') {
-        const ticketChannel = await message.guild.channels.create({
-            name: `ticket-${message.author.username}`,
+    if (commandName === 'ticket') {
+        const ticketChannel = await interaction.guild.channels.create({
+            name: `ticket-${interaction.user.username}`,
             type: ChannelType.GuildText,
             permissionOverwrites: [
                 {
-                    id: message.guild.roles.everyone.id,
+                    id: interaction.guild.roles.everyone.id,
                     deny: [PermissionsBitField.Flags.ViewChannel],
                 },
                 {
-                    id: message.author.id,
+                    id: interaction.user.id,
                     allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
                 },
             ],
@@ -142,11 +146,11 @@ client.on('messageCreate', async (message) => {
         const embed = new EmbedBuilder()
             .setColor('#7c6bff')
             .setTitle('Ticket erstellt')
-            .setDescription(`Hallo ${message.author}, dein Support-Ticket wurde geöffnet. Ein Moderator wird sich in Kürze um dein Anliegen kümmern.`)
+            .setDescription(`Hallo ${interaction.user}, dein Support-Ticket wurde geöffnet. Ein Moderator wird sich in Kürze um dein Anliegen kümmern.`)
             .setTimestamp();
 
-        ticketChannel.send({ embeds: [embed] });
-        message.reply(`Dein Ticket wurde in ${ticketChannel} erstellt.`);
+        await ticketChannel.send({ embeds: [embed] });
+        await interaction.reply({ content: `Dein Ticket wurde in ${ticketChannel} erstellt.`, ephemeral: true });
     }
 });
 
