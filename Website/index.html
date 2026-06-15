@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Guardian - Premium Discord Moderation</title>
+    <meta
+      name="description"
+      content="Guardian is a premium Discord moderation bot for serious communities, trusted teams, and calm operations."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="cursor-glow" aria-hidden="true"></div>
+    <canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+    <div class="ambient" aria-hidden="true">
+      <span class="orb orb-one"></span>
+      <span class="orb orb-two"></span>
+      <span class="orb orb-three"></span>
+      <span class="diagonal diagonal-one"></span>
+      <span class="diagonal diagonal-two"></span>
+    </div>
+
+    <header class="site-header">
+      <nav class="nav shell" aria-label="Primary navigation">
+        <a class="brand" href="#top" aria-label="Guardian home">
+          <span class="brand-mark"><span></span></span>
+          <span>Guardian</span>
+        </a>
+
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="nav-links">
+          <span></span>
+          <span></span>
+        </button>
+
+        <div class="nav-links" id="nav-links">
+          <a href="#bot">Bot</a>
+          <a href="#team">Team</a>
+          <a href="#rules">Regeln</a>
+          <a href="#features">Funktionen</a>
+        </div>
+
+        <a class="button button-small button-primary nav-cta" href="#add" data-ripple>
+          Add to Discord
+        </a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero section" id="bot">
+        <div class="shell hero-grid">
+          <div class="hero-copy reveal">
+            <p class="eyebrow">Guardian for Discord operations</p>
+            <h1>Discord moderation, calm by design.</h1>
+            <p class="hero-text">
+              Guardian gives serious Discord teams a polished command center for automod,
+              rules, warnings, tickets, logs, and trusted moderator workflows.
+            </p>
+
+            <div class="cta-row">
+              <a class="button button-primary" href="#add" data-ripple>Add to Discord</a>
+              <a class="button button-secondary" href="#dashboard" data-ripple>View dashboard</a>
+            </div>
+
+            <div class="hero-proof" aria-label="Guardian platform statistics">
+              <div>
+                <strong data-count="12000">0</strong>
+                <span>protected servers</span>
+              </div>
+              <div>
+                <strong data-count="98">0</strong>
+                <span>spam blocked</span>
+              </div>
+              <div>
+                <strong data-count="24">0</strong>
+                <span>hour coverage</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-visual reveal" data-parallax-zone>
+            <div class="dashboard-glow"></div>
+
+            <div class="float-card float-card-one" data-parallax="18">
+              <span class="status-dot green"></span>
+              <div>
+                <strong>Automod</strong>
+                <span>92 messages reviewed</span>
+              </div>
+            </div>
+
+            <div class="float-card float-card-two" data-parallax="28">
+              <span class="status-dot purple"></span>
+              <div>
+                <strong>Rule matched</strong>
+                <span>Invite link removed</span>
+              </div>
+            </div>
+
+            <div class="float-card float-card-three" data-parallax="22">
+              <span class="status-dot amber"></span>
+              <div>
+                <strong>Team sync</strong>
+                <span>3 moderators active</span>
+              </div>
+            </div>
+
+            <article class="dashboard-shell" data-tilt aria-label="Interactive Guardian dashboard mockup">
+              <div class="dashboard-window">
+                <div class="window-bar">
+                  <div class="window-controls" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                  <span>guardian.app/control</span>
+                </div>
+
+                <div class="dashboard-layout">
+                  <aside class="dash-sidebar" aria-label="Dashboard navigation">
+                    <span class="sidebar-logo">G</span>
+                    <button class="sidebar-item active" type="button" aria-label="Overview">O</button>
+                    <button class="sidebar-item" type="button" aria-label="Rules">R</button>
+                    <button class="sidebar-item" type="button" aria-label="Team">T</button>
+                    <button class="sidebar-item" type="button" aria-label="Logs">L</button>
+                  </aside>
+
+                  <div class="dash-main">
+                    <div class="dash-header">
+                      <div>
+                        <span class="micro-label">Live protection</span>
+                        <h2>Moderation overview</h2>
+                      </div>
+                      <span class="live-pill"><span></span>Online</span>
+                    </div>
+
+                    <div class="dash-tabs" role="tablist" aria-label="Dashboard preview tabs">
+                      <button class="active" type="button" role="tab" aria-selected="true" data-panel="automod">
+                        Automod
+                      </button>
+                      <button type="button" role="tab" aria-selected="false" data-panel="team">Team</button>
+                      <button type="button" role="tab" aria-selected="false" data-panel="rules">Regeln</button>
+                    </div>
+
+                    <div class="dash-stats">
+                      <div>
+                        <span>Actions today</span>
+                        <strong>1,284</strong>
+                      </div>
+                      <div>
+                        <span>Open cases</span>
+                        <strong>18</strong>
+                      </div>
+                      <div>
+                        <span>Response time</span>
+                        <strong>0.8s</strong>
+                      </div>
+                    </div>
+
+                    <div class="panel active" data-panel-content="automod">
+                      <div class="chart-card">
+                        <div class="chart-header">
+                          <span>Incident volume</span>
+                          <strong>-31%</strong>
+                        </div>
+                        <div class="bar-chart" aria-hidden="true">
+                          <span style="height: 46%"></span>
+                          <span style="height: 62%"></span>
+                          <span style="height: 38%"></span>
+                          <span style="height: 76%"></span>
+                          <span style="height: 51%"></span>
+                          <span style="height: 68%"></span>
+                          <span style="height: 42%"></span>
+                        </div>
+                      </div>
+                      <div class="queue-list">
+                        <div>
+                          <span class="queue-icon green"></span>
+                          <p>Spam burst stopped in #general</p>
+                          <small>Now</small>
+                        </div>
+                        <div>
+                          <span class="queue-icon purple"></span>
+                          <p>Suspicious link held for review</p>
+                          <small>2m</small>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="panel" data-panel-content="team">
+                      <div class="team-row">
+                        <span class="avatar">LK</span>
+                        <div>
+                          <strong>Lena K.</strong>
+                          <small>Escalation lead</small>
+                        </div>
+                        <span class="workload">42%</span>
+                      </div>
+                      <div class="team-row">
+                        <span class="avatar teal">AM</span>
+                        <div>
+                          <strong>Aaron M.</strong>
+                          <small>Ticket review</small>
+                        </div>
+                        <span class="workload">67%</span>
+                      </div>
+                      <div class="team-row">
+                        <span class="avatar amber">SV</span>
+                        <div>
+                          <strong>Sara V.</strong>
+                          <small>Audit logs</small>
+                        </div>
+                        <span class="workload">28%</span>
+                      </div>
+                    </div>
+
+                    <div class="panel" data-panel-content="rules">
+                      <div class="rule-line">
+                        <span>01</span>
+                        <p>Block repeated mentions across public channels</p>
+                        <strong>Active</strong>
+                      </div>
+                      <div class="rule-line">
+                        <span>02</span>
+                        <p>Escalate toxicity after second warning</p>
+                        <strong>Active</strong>
+                      </div>
+                      <div class="rule-line">
+                        <span>03</span>
+                        <p>Route appeals into private ticket threads</p>
+                        <strong>Draft</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="trusted section section-tight">
+        <div class="shell reveal">
+          <p class="section-kicker">Trusted by servers that need consistency</p>
+          <div class="trust-strip" aria-label="Trusted server categories">
+            <span>Community Ops</span>
+            <span>Creator Teams</span>
+            <span>Education</span>
+            <span>Web3 Support</span>
+            <span>Private Networks</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="features section" id="features">
+        <div class="shell">
+          <div class="section-heading reveal">
+            <p class="eyebrow">Funktionen</p>
+            <h2>Everything your moderators need, organized like a real product.</h2>
+            <p>
+              Guardian replaces scattered bot commands with clear workflows, readable context,
+              and controls your team can trust during busy moments.
+            </p>
+          </div>
+
+          <div class="feature-grid">
+            <article class="feature-card reveal" data-tilt>
+              <span class="feature-icon automod"></span>
+              <h3>Automod</h3>
+              <p>Detect spam, risky links, mention floods, and toxic patterns before they disrupt the room.</p>
+            </article>
+            <article class="feature-card reveal" data-tilt>
+              <span class="feature-icon logs"></span>
+              <h3>Logs</h3>
+              <p>Track every action with clean audit trails, filters, and context built for review.</p>
+            </article>
+            <article class="feature-card reveal" data-tilt>
+              <span class="feature-icon warnings"></span>
+              <h3>Warnings</h3>
+              <p>Issue, escalate, and resolve warnings with a consistent record across every channel.</p>
+            </article>
+            <article class="feature-card reveal" data-tilt>
+              <span class="feature-icon spam"></span>
+              <h3>Anti Spam</h3>
+              <p>Stop bursts, repeated posts, raids, and suspicious activity with fast protective rules.</p>
+            </article>
+            <article class="feature-card reveal" data-tilt>
+              <span class="feature-icon roles"></span>
+              <h3>Role Management</h3>
+              <p>Assign permissions with guardrails so teams can move quickly without overexposure.</p>
+            </article>
+            <article class="feature-card reveal" data-tilt>
+              <span class="feature-icon tickets"></span>
+              <h3>Ticket System</h3>
+              <p>Route appeals, reports, and support requests into private, accountable conversations.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-preview section" id="dashboard">
+        <div class="shell split-layout">
+          <div class="section-heading align-left reveal">
+            <p class="eyebrow">Moderation dashboard</p>
+            <h2>A calm command center for high-signal decisions.</h2>
+            <p>
+              See what happened, who handled it, which rule fired, and what should happen next.
+              Guardian keeps the interface quiet so your team can focus.
+            </p>
+            <a class="text-link" href="#add">Explore Guardian <span aria-hidden="true">-></span></a>
+          </div>
+
+          <div class="analytics-board reveal" data-tilt>
+            <div class="analytics-header">
+              <div>
+                <span class="micro-label">Last 7 days</span>
+                <h3>Risk trends</h3>
+              </div>
+              <span class="trend-pill">Healthy</span>
+            </div>
+            <div class="line-chart" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="review-feed">
+              <div>
+                <span class="feed-marker"></span>
+                <p>Raid pattern identified and throttled automatically.</p>
+                <strong>Resolved</strong>
+              </div>
+              <div>
+                <span class="feed-marker purple"></span>
+                <p>Moderator note added to repeat warning case.</p>
+                <strong>Review</strong>
+              </div>
+              <div>
+                <span class="feed-marker amber"></span>
+                <p>New rule suggestion generated from ticket volume.</p>
+                <strong>Draft</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="team section" id="team">
+        <div class="shell">
+          <div class="section-heading reveal">
+            <p class="eyebrow">Team management</p>
+            <h2>Give moderators clarity without giving away the whole server.</h2>
+            <p>
+              Build roles, handoffs, case ownership, and escalation paths that make moderation feel
+              measured instead of improvised.
+            </p>
+          </div>
+
+          <div class="process-grid">
+            <article class="process-card reveal">
+              <span>01</span>
+              <h3>Assign ownership</h3>
+              <p>Cases stay tied to a person, status, and next action.</p>
+            </article>
+            <article class="process-card reveal">
+              <span>02</span>
+              <h3>Review decisions</h3>
+              <p>Leads can audit moderator actions without digging through chat history.</p>
+            </article>
+            <article class="process-card reveal">
+              <span>03</span>
+              <h3>Escalate cleanly</h3>
+              <p>Complex incidents move into private workflows with the right people attached.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="rules section" id="rules">
+        <div class="shell rules-layout">
+          <div class="rules-copy reveal">
+            <p class="eyebrow">Regeln</p>
+            <h2>Rules that read like policy and execute like infrastructure.</h2>
+            <p>
+              Translate community standards into clear enforcement paths. Combine triggers, thresholds,
+              cooldowns, and escalation logic without building a tangled command list.
+            </p>
+          </div>
+
+          <div class="rules-stack reveal">
+            <div class="rules-card active">
+              <span>Trigger</span>
+              <strong>Repeated mention burst</strong>
+              <p>Detects fast, disruptive notification patterns across channels.</p>
+            </div>
+            <div class="rules-card">
+              <span>Action</span>
+              <strong>Mute, log, notify</strong>
+              <p>Applies the right consequence and keeps your staff aligned.</p>
+            </div>
+            <div class="rules-card">
+              <span>Escalation</span>
+              <strong>Open review ticket</strong>
+              <p>Creates a private case when a member reaches a defined risk threshold.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="faq section">
+        <div class="shell faq-layout">
+          <div class="section-heading align-left reveal">
+            <p class="eyebrow">FAQ</p>
+            <h2>Questions before you invite Guardian?</h2>
+            <p>Short answers for teams comparing Guardian with command-first moderation bots.</p>
+          </div>
+
+          <div class="faq-list reveal">
+            <details open>
+              <summary>Is Guardian only for large Discord servers?</summary>
+              <p>
+                No. Guardian is built for any server that wants predictable moderation, from private
+                communities to large support spaces.
+              </p>
+            </details>
+            <details>
+              <summary>Can we keep our existing roles and channels?</summary>
+              <p>
+                Yes. Guardian layers over your current structure and lets you map permissions,
+                alerts, ticket routing, and logs to the places your team already uses.
+              </p>
+            </details>
+            <details>
+              <summary>Does Guardian replace human moderators?</summary>
+              <p>
+                No. It removes repetitive moderation work and gives humans better context for the
+                decisions that need judgment.
+              </p>
+            </details>
+            <details>
+              <summary>Can automod rules be tuned?</summary>
+              <p>
+                Yes. Rules can be adjusted by channel, role, severity, cooldown, and escalation path.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer" id="add">
+      <div class="shell footer-layout">
+        <div>
+          <a class="brand" href="#top" aria-label="Guardian home">
+            <span class="brand-mark"><span></span></span>
+            <span>Guardian</span>
+          </a>
+          <p>Premium moderation infrastructure for Discord teams that care about trust.</p>
+        </div>
+        <div class="footer-actions">
+          <a class="button button-primary" href="#" data-ripple>Add to Discord</a>
+          <a class="button button-secondary" href="#features" data-ripple>See features</a>
+        </div>
+      </div>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
