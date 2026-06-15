@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField, ChannelType } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField, ChannelType, ActivityType } = require('discord.js');
 
 const client = new Client({
     intents: [
@@ -7,17 +7,61 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers
-    ]
+    ],
+    presence: {
+        status: 'dnd',
+        activities: [{
+            name: 'Wird gestartet',
+            type: ActivityType.Custom
+        }]
+    }
 });
 
 const warnings = new Map();
+const badWords = [
+    'penis', 'arsch', 'depp', 'arschloch', 'hurensohn', 'bastard', 'wichser', 
+    'wixxer', 'fotze', 'schlampe', 'nutte', 'missgeburt', 'spast', 'spasti', 
+    'fick', 'ficken', 'schwuchtel', 'kanake', 'nazi', 'hundesohn', 'drecksau',
+    'wichs', 'wixx', 'hs', 'huso', 'affe', 'lappen', 'opfer', 'pimmel', 'schwanz',
+    'fotzenknecht', 'lauch', 'kek', 'alman', 'bimbo', 'neger', 'nigger', 
+    'schweinehund', 'kacke', 'scheiße', 'scheiss', 'scheiß', 'dreckskerl', 
+    'flittchen', 'stricher', 'hure', 'dirne', 'bordsteinschwalbe', 'vollidiot', 
+    'idiot', 'spacko', 'spacken', 'spanner', 'wichsfleck', 'pissnelke', 'pisser', 
+    'pissen', 'kackwurst', 'kackbratze', 'dulli', 'schmock', 'trottel', 
+    'dummsack', 'dummkopf', 'pedo', 'ratte', 'dreckspack', 'gesindel', 
+    'asozialer', 'assi', 'asi', 'mongo', 'behinderter', 'krüppel', 
+    'fickschnitzel', 'saftsack', 'sackgesicht'
+];
 
-client.once('ready', () => {
+client.once('clientReady', () => {
     console.log(`${client.user.tag} ist online.`);
+    
+    setTimeout(() => {
+        client.user.setPresence({
+            status: 'online',
+            activities: [{
+                name: 'Ready',
+                type: ActivityType.Custom
+            }]
+        });
+    }, 3500);
 });
 
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
+
+    const containsBadWord = badWords.some(word => message.content.toLowerCase().includes(word));
+    if (containsBadWord) {
+        if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
+            await message.delete();
+            const badWordEmbed = new EmbedBuilder()
+                .setColor('#ff6f91')
+                .setTitle('Automod')
+                .setDescription(`${message.author}, achte auf deine Wortwahl!`)
+                .setTimestamp();
+            return message.channel.send({ embeds: [badWordEmbed] });
+        }
+    }
 
     const inviteRegex = /(discord\.(gg|io|me|li)|discordapp\.com\/invite)\/[a-zA-Z0-9]+/i;
     if (inviteRegex.test(message.content)) {
