@@ -1,0 +1,158 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #0f1117;
+    color: white;
+}
+
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+aside {
+    width: 240px;
+    background: #161a22;
+    padding: 30px;
+}
+
+aside h2 {
+    margin-bottom: 35px;
+}
+
+aside a {
+    display: block;
+    color: #9ca3af;
+    padding: 14px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+}
+
+aside a.active {
+    background: #5865f2;
+    color: white;
+}
+
+main {
+    flex: 1;
+    padding: 40px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 35px;
+}
+
+header p {
+    color: #9ca3af;
+    margin-top: 8px;
+}
+
+.btn {
+    background: #5865f2;
+    color: white;
+    text-decoration: none;
+    padding: 12px 18px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+.btn:hover {
+    background: #4752c4;
+}
+
+.btn.small {
+    padding: 10px 14px;
+    font-size: 14px;
+}
+
+.hidden {
+    display: none;
+}
+
+.server-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 20px;
+}
+
+.server-card {
+    background: #161a22;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 18px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.server-card img {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+}
+
+.server-card div {
+    flex: 1;
+}
+
+.server-card p {
+    color: #9ca3af;
+    margin-top: 5px;
+}
+.login-wall {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 17, 23, 0.92);
+    backdrop-filter: blur(14px);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-box {
+    width: 520px;
+    max-width: 90%;
+    background: #161a22;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 24px;
+    padding: 45px;
+    text-align: center;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+}
+
+.login-box h1 {
+    margin-bottom: 12px;
+}
+
+.login-box p {
+    color: #9ca3af;
+    line-height: 1.6;
+    margin-bottom: 28px;
+}
+
+.btn.big {
+    padding: 16px 26px;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.btn.green {
+    background: #22c55e;
+}
+
+.btn.green:hover {
+    background: #16a34a;
+}
+
+.installed {
+    color: #22c55e !important;
+}

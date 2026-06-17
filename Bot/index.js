@@ -1,4 +1,10 @@
 require('dotenv').config();
+const express = require('express');
+const path = require('path');
+
+const app = express();
+
+app.use(express.static(path.join(__dirname, 'Dashboard')));
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField, ChannelType, ActivityType } = require('discord.js');
 
 const client = new Client({
@@ -197,5 +203,16 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply({ content: `Dein Ticket wurde in ${ticketChannel} erstellt.`, ephemeral: true });
     }
 });
+app.get('/api/status', (req, res) => {
+    res.json({
+        bot: client.user ? client.user.tag : 'Offline',
+        servers: client.guilds.cache.size,
+        users: client.guilds.cache.reduce((a, g) => a + g.memberCount, 0),
+        ping: client.ws.ping
+    });
+});
 
+app.listen(3000, () => {
+    console.log('Dashboard läuft auf http://localhost:3000');
+});
 client.login(process.env.DISCORD_TOKEN);

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Guardian Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="loginWall" class="login-wall hidden">
+    <div class="login-box">
+        <h1>Guardian Dashboard</h1>
+        <p>Du musst dich zuerst mit Discord anmelden, bevor du deine Server verwalten kannst.</p>
+        <a href="/login" class="btn big">Mit Discord anmelden</a>
+    </div>
+</div>
+
+<div class="layout">
+    <aside>
+        <h2>Guardian</h2>
+        <a class="active">Server</a>
+        <a>Dashboard</a>
+        <a>Settings</a>
+    </aside>
+
+    <main>
+        <header>
+            <div>
+                <h1>Deine Server</h1>
+                <p id="userInfo">Nicht angemeldet</p>
+            </div>
+
+            <div>
+                <a href="/login" id="loginBtn" class="btn">Mit Discord anmelden</a>
+                <a href="/logout" id="logoutBtn" class="btn hidden">Logout</a>
+            </div>
+        </header>
+
+        <section id="serverList" class="server-grid"></section>
+    </main>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
