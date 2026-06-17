@@ -7,14 +7,76 @@
 </head>
 <body>
 
-<main>
-    <h1>Server verwalten</h1>
-    <p>Hier kommen später Automod, Tickets, Logs und Rollen rein.</p>
+<div class="layout">
+    <aside>
+        <h2>Guardian</h2>
+        <a href="/">Server</a>
+        <a class="active">Funktionen</a>
+        <a>Logs</a>
+        <a>Tickets</a>
+    </aside>
 
-    <br>
+    <main>
+        <header>
+            <div>
+                <h1>Server verwalten</h1>
+                <p id="serverId">Lädt...</p>
+            </div>
 
-    <a href="/" class="btn">Zurück</a>
-</main>
+            <a href="/" class="btn">Zurück</a>
+        </header>
 
+        <section class="settings-panel">
+            <h2>Funktionen</h2>
+
+            <div class="setting-row">
+                <div>
+                    <h3>Automod</h3>
+                    <p>Filtert Beleidigungen und unerwünschte Wörter.</p>
+                </div>
+                <input type="checkbox" id="automod">
+            </div>
+
+            <div class="setting-row">
+                <div>
+                    <h3>Ticket System</h3>
+                    <p>Erlaubt Nutzern Support-Tickets zu erstellen.</p>
+                </div>
+                <input type="checkbox" id="tickets">
+            </div>
+
+            <div class="setting-row">
+                <div>
+                    <h3>Invite Blocker</h3>
+                    <p>Blockiert Discord-Einladungslinks.</p>
+                </div>
+                <input type="checkbox" id="inviteBlocker">
+            </div>
+
+            <div class="setting-row">
+                <div>
+                    <h3>Max Mentions</h3>
+                    <p>Maximale Erwähnungen pro Nachricht.</p>
+                </div>
+                <input type="number" id="maxMentions" min="1" max="20">
+            </div>
+
+            <div class="setting-column">
+                <h3>Log Channel ID</h3>
+                <input type="text" id="logChannel" placeholder="Channel ID">
+            </div>
+
+            <div class="setting-column">
+                <h3>Welcome Message</h3>
+                <textarea id="welcomeMessage" placeholder="Willkommen auf dem Server!"></textarea>
+            </div>
+
+            <button class="btn save-btn" id="saveBtn">Speichern</button>
+            <p id="saveStatus"></p>
+        </section>
+    </main>
+</div>
+
+<script src="/server-settings.js"></script>
 </body>
 </html>

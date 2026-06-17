@@ -1,0 +1,10 @@
+{
+    "1516113523959402712": {
+        "automod": true,
+        "tickets": false,
+        "inviteBlocker": true,
+        "maxMentions": 5,
+        "logChannel": "",
+        "welcomeMessage": "Willkommen auf dem Server!"
+    }
+}
