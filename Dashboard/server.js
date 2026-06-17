@@ -3,7 +3,21 @@ require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
+const fs = require("fs");
 
+const settingsPath = path.join(__dirname, "guildSettings.json");
+
+function loadSettings() {
+    if (!fs.existsSync(settingsPath)) {
+        fs.writeFileSync(settingsPath, "{}");
+    }
+
+    return JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+}
+
+function saveSettings(settings) {
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 4));
+}
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -130,7 +144,54 @@ app.get("/api/guilds", async (req, res) => {
 
     res.json(result);
 });
+app.get("/api/server/:id/settings", (req, res) => {
+    if (!req.session.accessToken) {
+        return res.status(401).json({ error: "Nicht eingeloggt" });
+    }
 
+    const guildId = req.params.id;
+    const settings = loadSettings();
+
+    if (!settings[guildId]) {
+        settings[guildId] = {
+            automod: true,
+            tickets: true,
+            inviteBlocker: true,
+            maxMentions: 5,
+            logChannel: "",
+            welcomeMessage: "Willkommen auf dem Server!"
+        };
+
+        saveSettings(settings);
+    }
+
+    res.json(settings[guildId]);
+});
+
+app.post("/api/server/:id/settings", express.json(), (req, res) => {
+    if (!req.session.accessToken) {
+        return res.status(401).json({ error: "Nicht eingeloggt" });
+    }
+
+    const guildId = req.params.id;
+    const settings = loadSettings();
+
+    settings[guildId] = {
+        automod: Boolean(req.body.automod),
+        tickets: Boolean(req.body.tickets),
+        inviteBlocker: Boolean(req.body.inviteBlocker),
+        maxMentions: Number(req.body.maxMentions) || 5,
+        logChannel: req.body.logChannel || "",
+        welcomeMessage: req.body.welcomeMessage || "Willkommen auf dem Server!"
+    };
+
+    saveSettings(settings);
+
+    res.json({
+        success: true,
+        settings: settings[guildId]
+    });
+});
 app.get("/logout", (req, res) => {
     req.session.destroy(() => {
         res.redirect("/");
