@@ -89,60 +89,29 @@ app.get("/api/me", async (req, res) => {
     });
 });
 
-app.get("/api/guilds", async (req, res) => {
-    if (!req.session.accessToken) {
-        return res.status(401).json({ error: "Nicht eingeloggt" });
-    }
+app.get("/api/debug/bot", async (req, res) => {
+    const botToken = process.env.DISCORD_BOT_TOKEN || process.env.DISCORD_TOKEN;
 
-    const userGuildRes = await fetch("https://discord.com/api/users/@me/guilds", {
+    const botRes = await fetch("https://discord.com/api/users/@me", {
         headers: {
-            Authorization: `Bearer ${req.session.accessToken}`
+            Authorization: `Bot ${botToken}`
         }
     });
 
-    const userGuilds = await userGuildRes.json();
+    const botData = await botRes.json();
 
-    const botGuildRes = await fetch("https://discord.com/api/users/@me/guilds", {
+    const guildRes = await fetch("https://discord.com/api/users/@me/guilds", {
         headers: {
-            Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`
+            Authorization: `Bot ${botToken}`
         }
     });
 
-    const botGuilds = await botGuildRes.json();
+    const guildData = await guildRes.json();
 
-    const botGuildIds = new Set(
-        Array.isArray(botGuilds) ? botGuilds.map(guild => guild.id) : []
-    );
-
-    const adminGuilds = userGuilds.filter(guild => {
-        const permissions = BigInt(guild.permissions);
-        const hasManageServer = (permissions & BigInt(0x20)) === BigInt(0x20);
-        const hasAdmin = (permissions & BigInt(0x8)) === BigInt(0x8);
-
-        return hasManageServer || hasAdmin;
+    res.json({
+        bot: botData,
+        guilds: guildData
     });
-
-    const result = adminGuilds.map(guild => {
-        const botIsOnServer = botGuildIds.has(guild.id);
-
-        const inviteUrl = new URL("https://discord.com/oauth2/authorize");
-        inviteUrl.searchParams.set("client_id", process.env.DISCORD_CLIENT_ID);
-        inviteUrl.searchParams.set("permissions", process.env.BOT_INVITE_PERMISSIONS || "8");
-        inviteUrl.searchParams.set("scope", "bot applications.commands");
-        inviteUrl.searchParams.set("guild_id", guild.id);
-        inviteUrl.searchParams.set("disable_guild_select", "true");
-
-        return {
-            id: guild.id,
-            name: guild.name,
-            icon: guild.icon,
-            botInstalled: botIsOnServer,
-            inviteUrl: inviteUrl.toString(),
-            manageUrl: `/server/${guild.id}`
-        };
-    });
-
-    res.json(result);
 });
 app.get("/api/server/:id/settings", (req, res) => {
     if (!req.session.accessToken) {
