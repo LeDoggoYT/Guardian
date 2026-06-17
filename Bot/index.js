@@ -1,11 +1,10 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField, ChannelType, ActivityType } = require('discord.js');
 
 const app = express();
-
 app.use(express.static(path.join(__dirname, 'Dashboard')));
-const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField, ChannelType, ActivityType } = require('discord.js');
 
 const client = new Client({
     intents: [
@@ -36,7 +35,7 @@ const badWords = [
     'pissen', 'kackwurst', 'kackbratze', 'dulli', 'schmock', 'trottel', 
     'dummsack', 'dummkopf', 'pedo', 'ratte', 'dreckspack', 'gesindel', 
     'asozialer', 'assi', 'asi', 'mongo', 'behinderter', 'krüppel', 
-    'fickschnitzel', 'saftsack', 'sackgesicht', 'Nigger', 'nigger', 'neger', 'Neger'
+    'fickschnitzel', 'saftsack', 'sackgesicht'
 ];
 
 client.once('clientReady', () => {
@@ -56,41 +55,43 @@ client.once('clientReady', () => {
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
 
-    const containsBadWord = badWords.some(word => message.content.toLowerCase().includes(word));
+    const messageContentLower = message.content.toLowerCase();
+    const containsBadWord = badWords.some(word => messageContentLower.includes(word.toLowerCase()));
+    
     if (containsBadWord) {
         if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
-            await message.delete();
+            await message.delete().catch(() => {});
             const badWordEmbed = new EmbedBuilder()
                 .setColor('#ff6f91')
                 .setTitle('Automod')
                 .setDescription(`${message.author}, achte auf deine Wortwahl!`)
                 .setTimestamp();
-            return message.channel.send({ embeds: [badWordEmbed] });
+            return message.channel.send({ embeds: [badWordEmbed] }).catch(() => {});
         }
     }
 
     const inviteRegex = /(discord\.(gg|io|me|li)|discordapp\.com\/invite)\/[a-zA-Z0-9]+/i;
     if (inviteRegex.test(message.content)) {
         if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
-            await message.delete();
+            await message.delete().catch(() => {});
             const warnEmbed = new EmbedBuilder()
                 .setColor('#ff6f91')
                 .setTitle('Automod')
                 .setDescription(`${message.author}, Einladungslinks sind auf diesem Server nicht erlaubt.`)
                 .setTimestamp();
-            return message.channel.send({ embeds: [warnEmbed] });
+            return message.channel.send({ embeds: [warnEmbed] }).catch(() => {});
         }
     }
 
     if (message.mentions.users.size > 5) {
         if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
-            await message.delete();
+            await message.delete().catch(() => {});
             const mentionEmbed = new EmbedBuilder()
                 .setColor('#ff6f91')
                 .setTitle('Automod')
                 .setDescription(`${message.author}, du hast zu viele Nutzer auf einmal erwähnt.`)
                 .setTimestamp();
-            return message.channel.send({ embeds: [mentionEmbed] });
+            return message.channel.send({ embeds: [mentionEmbed] }).catch(() => {});
         }
     }
 });
@@ -203,6 +204,7 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply({ content: `Dein Ticket wurde in ${ticketChannel} erstellt.`, ephemeral: true });
     }
 });
+
 app.get('/api/status', (req, res) => {
     res.json({
         bot: client.user ? client.user.tag : 'Offline',
@@ -215,4 +217,5 @@ app.get('/api/status', (req, res) => {
 app.listen(3000, () => {
     console.log('Dashboard läuft auf http://localhost:3000');
 });
+
 client.login(process.env.DISCORD_TOKEN);
