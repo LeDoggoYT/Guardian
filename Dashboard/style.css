@@ -74,7 +74,7 @@ header p {
 }
 
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 .server-grid {

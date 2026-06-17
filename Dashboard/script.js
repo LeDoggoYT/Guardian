@@ -3,6 +3,7 @@ const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const serverList = document.getElementById("serverList");
 const loginWall = document.getElementById("loginWall");
+const overlayLogin = document.getElementById("overlayLogin");
 
 async function loadMe() {
     const res = await fetch("/api/me");
@@ -11,6 +12,8 @@ async function loadMe() {
     if (!data.loggedIn) {
         userInfo.textContent = "Nicht angemeldet";
         loginWall.classList.remove("hidden");
+        loginBtn.classList.remove("hidden");
+        logoutBtn.classList.add("hidden");
         return;
     }
 
@@ -26,7 +29,14 @@ async function loadGuilds() {
     const res = await fetch("/api/guilds");
     const guilds = await res.json();
 
+    console.log("Guilds:", guilds);
+
     serverList.innerHTML = "";
+
+    if (!Array.isArray(guilds)) {
+        serverList.innerHTML = "<p>Server konnten nicht geladen werden.</p>";
+        return;
+    }
 
     guilds.forEach(guild => {
         const icon = guild.icon
@@ -54,6 +64,18 @@ async function loadGuilds() {
         `;
 
         serverList.appendChild(card);
+    });
+}
+
+if (overlayLogin) {
+    overlayLogin.addEventListener("click", () => {
+        loginWall.classList.add("hidden");
+    });
+}
+
+if (loginBtn) {
+    loginBtn.addEventListener("click", () => {
+        loginWall.classList.add("hidden");
     });
 }
 
