@@ -36,7 +36,7 @@ const badWords = [
     'pissen', 'kackwurst', 'kackbratze', 'dulli', 'schmock', 'trottel', 
     'dummsack', 'dummkopf', 'pedo', 'ratte', 'dreckspack', 'gesindel', 
     'asozialer', 'assi', 'asi', 'mongo', 'behinderter', 'krüppel', 
-    'fickschnitzel', 'saftsack', 'sackgesicht'
+    'fickschnitzel', 'saftsack', 'sackgesicht', 'Nigger', 'nigger', 'neger', 'Neger'
 ];
 
 client.once('clientReady', () => {
