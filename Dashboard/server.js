@@ -11,13 +11,13 @@ function loadSettings() {
     if (!fs.existsSync(settingsPath)) {
         fs.writeFileSync(settingsPath, "{}");
     }
-
     return JSON.parse(fs.readFileSync(settingsPath, "utf8"));
 }
 
 function saveSettings(settings) {
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 4));
 }
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -36,7 +36,6 @@ app.get("/login", (req, res) => {
         response_type: "code",
         scope: "identify guilds"
     });
-
     res.redirect(`https://discord.com/oauth2/authorize?${params.toString()}`);
 });
 
@@ -62,7 +61,6 @@ app.get("/auth/discord/callback", async (req, res) => {
     const tokenData = await tokenRes.json();
 
     if (!tokenData.access_token) {
-        console.log(tokenData);
         return res.send("Login fehlgeschlagen.");
     }
 
@@ -82,37 +80,65 @@ app.get("/api/me", async (req, res) => {
     });
 
     const user = await userRes.json();
+    res.json({ loggedIn: true, user });
+});
 
-    res.json({
-        loggedIn: true,
-        user
-    });
+app.get("/api/guilds", async (req, res) => {
+    if (!req.session.accessToken) {
+        return res.status(401).json({ error: "Nicht eingeloggt" });
+    }
+
+    try {
+        const userGuildsRes = await fetch("https://discord.com/api/users/@me/guilds", {
+            headers: { Authorization: `Bearer ${req.session.accessToken}` }
+        });
+        const userGuilds = await userGuildsRes.json();
+
+        const botToken = process.env.DISCORD_BOT_TOKEN || process.env.DISCORD_TOKEN;
+        const botGuildsRes = await fetch("https://discord.com/api/users/@me/guilds", {
+            headers: { Authorization: `Bot ${botToken}` }
+        });
+        const botGuilds = await botGuildsRes.json();
+
+        if (!Array.isArray(userGuilds)) {
+            return res.json([]);
+        }
+
+        const botGuildIds = new Set(Array.isArray(botGuilds) ? botGuilds.map(g => g.id) : []);
+
+        const manageableGuilds = userGuilds
+            .filter(guild => (guild.permissions & 0x20) === 0x20 || (guild.permissions & 0x8) === 0x8)
+            .map(guild => ({
+                id: guild.id,
+                name: guild.name,
+                icon: guild.icon,
+                botInstalled: botGuildIds.has(guild.id),
+                manageUrl: `/server/${guild.id}`,
+                inviteUrl: `https://discord.com/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID}&permissions=8&integration_type=0&scope=bot`
+            }));
+
+        res.json(manageableGuilds);
+    } catch (error) {
+        res.status(500).json({ error: "Fehler beim Laden der Server" });
+    }
 });
 
 app.get("/api/debug/bot", async (req, res) => {
     const botToken = process.env.DISCORD_BOT_TOKEN || process.env.DISCORD_TOKEN;
 
     const botRes = await fetch("https://discord.com/api/users/@me", {
-        headers: {
-            Authorization: `Bot ${botToken}`
-        }
+        headers: { Authorization: `Bot ${botToken}` }
     });
-
     const botData = await botRes.json();
 
     const guildRes = await fetch("https://discord.com/api/users/@me/guilds", {
-        headers: {
-            Authorization: `Bot ${botToken}`
-        }
+        headers: { Authorization: `Bot ${botToken}` }
     });
-
     const guildData = await guildRes.json();
 
-    res.json({
-        bot: botData,
-        guilds: guildData
-    });
+    res.json({ bot: botData, guilds: guildData });
 });
+
 app.get("/api/server/:id/settings", (req, res) => {
     if (!req.session.accessToken) {
         return res.status(401).json({ error: "Nicht eingeloggt" });
@@ -127,10 +153,8 @@ app.get("/api/server/:id/settings", (req, res) => {
             tickets: true,
             inviteBlocker: true,
             maxMentions: 5,
-            logChannel: "",
-            welcomeMessage: "Willkommen auf dem Server!"
+            logChannel: ""
         };
-
         saveSettings(settings);
     }
 
@@ -150,8 +174,7 @@ app.post("/api/server/:id/settings", express.json(), (req, res) => {
         tickets: Boolean(req.body.tickets),
         inviteBlocker: Boolean(req.body.inviteBlocker),
         maxMentions: Number(req.body.maxMentions) || 5,
-        logChannel: req.body.logChannel || "",
-        welcomeMessage: req.body.welcomeMessage || "Willkommen auf dem Server!"
+        logChannel: req.body.logChannel || ""
     };
 
     saveSettings(settings);
@@ -161,6 +184,7 @@ app.post("/api/server/:id/settings", express.json(), (req, res) => {
         settings: settings[guildId]
     });
 });
+
 app.get("/logout", (req, res) => {
     req.session.destroy(() => {
         res.redirect("/");

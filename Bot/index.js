@@ -1,10 +1,7 @@
 require('dotenv').config();
-const express = require('express');
+const fs = require('fs');
 const path = require('path');
-const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField, ChannelType, ActivityType } = require('discord.js');
-
-const app = express();
-app.use(express.static(path.join(__dirname, 'Dashboard')));
+const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField, ChannelType, ActivityType, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
 
 const client = new Client({
     intents: [
@@ -38,9 +35,30 @@ const badWords = [
     'fickschnitzel', 'saftsack', 'sackgesicht'
 ];
 
+const settingsPath = path.join(__dirname, 'guildSettings.json');
+
+function getSettings(guildId) {
+    try {
+        if (fs.existsSync(settingsPath)) {
+            const data = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+            return data[guildId] || {};
+        }
+    } catch (error) {}
+    return {};
+}
+
+async function sendLog(guild, settings, embed) {
+    if (!settings.logChannel) return;
+    const cleanLogId = settings.logChannel.replace(/[^0-9]/g, '');
+    try {
+        const channel = await guild.channels.fetch(cleanLogId);
+        if (channel) {
+            await channel.send({ embeds: [embed] }).catch(() => {});
+        }
+    } catch (error) {}
+}
+
 client.once('clientReady', () => {
-    console.log(`${client.user.tag} ist online.`);
-    
     setTimeout(() => {
         client.user.setPresence({
             status: 'online',
@@ -55,48 +73,181 @@ client.once('clientReady', () => {
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
 
-    const messageContentLower = message.content.toLowerCase();
-    const containsBadWord = badWords.some(word => messageContentLower.includes(word.toLowerCase()));
-    
-    if (containsBadWord) {
-        if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
+    const settings = getSettings(message.guild.id);
+    const isModerator = message.member?.permissions.has(PermissionsBitField.Flags.ManageMessages);
+
+    if (settings.automod !== false && !isModerator) {
+        const messageContentLower = message.content.toLowerCase();
+        const containsBadWord = badWords.some(word => messageContentLower.includes(word));
+        
+        if (containsBadWord) {
             await message.delete().catch(() => {});
             const badWordEmbed = new EmbedBuilder()
                 .setColor('#ff6f91')
                 .setTitle('Automod')
                 .setDescription(`${message.author}, achte auf deine Wortwahl!`)
                 .setTimestamp();
-            return message.channel.send({ embeds: [badWordEmbed] }).catch(() => {});
+            await message.channel.send({ embeds: [badWordEmbed] }).catch(() => {});
+            
+            const logEmbed = new EmbedBuilder()
+                .setColor('#ff6f91')
+                .setTitle('Automod: Schimpfwort')
+                .setDescription(`**User:** ${message.author}\n**Channel:** ${message.channel}\n**Nachricht:** ${message.content}`)
+                .setTimestamp();
+            await sendLog(message.guild, settings, logEmbed);
+            return;
         }
     }
 
-    const inviteRegex = /(discord\.(gg|io|me|li)|discordapp\.com\/invite)\/[a-zA-Z0-9]+/i;
-    if (inviteRegex.test(message.content)) {
-        if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
+    if (settings.inviteBlocker !== false && !isModerator) {
+        const inviteRegex = /(discord\.(gg|io|me|li)|discordapp\.com\/invite)\/[a-zA-Z0-9]+/i;
+        if (inviteRegex.test(message.content)) {
             await message.delete().catch(() => {});
             const warnEmbed = new EmbedBuilder()
                 .setColor('#ff6f91')
                 .setTitle('Automod')
                 .setDescription(`${message.author}, Einladungslinks sind auf diesem Server nicht erlaubt.`)
                 .setTimestamp();
-            return message.channel.send({ embeds: [warnEmbed] }).catch(() => {});
+            await message.channel.send({ embeds: [warnEmbed] }).catch(() => {});
+            
+            const logEmbed = new EmbedBuilder()
+                .setColor('#ff6f91')
+                .setTitle('Automod: Einladung')
+                .setDescription(`**User:** ${message.author}\n**Channel:** ${message.channel}\n**Nachricht:** ${message.content}`)
+                .setTimestamp();
+            await sendLog(message.guild, settings, logEmbed);
+            return;
         }
     }
 
-    if (message.mentions.users.size > 5) {
-        if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
-            await message.delete().catch(() => {});
-            const mentionEmbed = new EmbedBuilder()
-                .setColor('#ff6f91')
-                .setTitle('Automod')
-                .setDescription(`${message.author}, du hast zu viele Nutzer auf einmal erwähnt.`)
-                .setTimestamp();
-            return message.channel.send({ embeds: [mentionEmbed] }).catch(() => {});
-        }
+    const maxMentions = settings.maxMentions || 5;
+    if (message.mentions.users.size > maxMentions && !isModerator) {
+        await message.delete().catch(() => {});
+        const mentionEmbed = new EmbedBuilder()
+            .setColor('#ff6f91')
+            .setTitle('Automod')
+            .setDescription(`${message.author}, du hast zu viele Nutzer auf einmal erwähnt.`)
+            .setTimestamp();
+        await message.channel.send({ embeds: [mentionEmbed] }).catch(() => {});
+        
+        const logEmbed = new EmbedBuilder()
+            .setColor('#ff6f91')
+            .setTitle('Automod: Mass Mentions')
+            .setDescription(`**User:** ${message.author}\n**Channel:** ${message.channel}`)
+            .setTimestamp();
+        await sendLog(message.guild, settings, logEmbed);
+        return;
     }
 });
 
 client.on('interactionCreate', async interaction => {
+    const settings = interaction.guild ? getSettings(interaction.guild.id) : {};
+
+    if (interaction.isButton()) {
+        if (interaction.customId === 'claim_ticket') {
+            if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
+                return interaction.reply({ content: 'Du hast keine Berechtigung, dieses Ticket zu claimen.', ephemeral: true });
+            }
+            
+            const row = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('claim_ticket')
+                        .setLabel(`Geclaimt von ${interaction.user.username}`)
+                        .setStyle(ButtonStyle.Success)
+                        .setDisabled(true),
+                    new ButtonBuilder()
+                        .setCustomId('delete_ticket')
+                        .setLabel('Ticket löschen')
+                        .setStyle(ButtonStyle.Danger)
+                );
+            
+            await interaction.update({ components: [row] }).catch(() => {});
+            await interaction.channel.send({ content: `Dieses Ticket wird nun von ${interaction.user} bearbeitet.` }).catch(() => {});
+            
+            const logEmbed = new EmbedBuilder()
+                .setColor('#35d5a7')
+                .setTitle('Ticket geclaimt')
+                .setDescription(`**Ticket:** ${interaction.channel.name}\n**Moderator:** ${interaction.user}`)
+                .setTimestamp();
+            await sendLog(interaction.guild, settings, logEmbed);
+            return;
+        }
+
+        if (interaction.customId === 'delete_ticket') {
+            if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
+                return interaction.reply({ content: 'Du hast keine Berechtigung, dieses Ticket zu löschen.', ephemeral: true });
+            }
+            await interaction.reply({ content: 'Ticket wird in 10 Sekunden gelöscht.' }).catch(() => {});
+            
+            const logEmbed = new EmbedBuilder()
+                .setColor('#ff6f91')
+                .setTitle('Ticket gelöscht')
+                .setDescription(`**Ticket:** ${interaction.channel.name}\n**Gelöscht von:** ${interaction.user}`)
+                .setTimestamp();
+            await sendLog(interaction.guild, settings, logEmbed);
+            
+            setTimeout(() => {
+                interaction.channel.delete().catch(() => {});
+            }, 10000);
+            return;
+        }
+    }
+
+    if (interaction.isStringSelectMenu()) {
+        if (interaction.customId === 'ticket_reason') {
+            const reasonValue = interaction.values[0];
+            let reasonText = 'Sonstiges';
+            if (reasonValue === 'support') reasonText = 'Allgemeiner Support';
+            if (reasonValue === 'report') reasonText = 'Nutzer melden';
+            if (reasonValue === 'bug') reasonText = 'Bug Report';
+
+            const ticketChannel = await interaction.guild.channels.create({
+                name: `ticket-${interaction.user.username}`,
+                type: ChannelType.GuildText,
+                permissionOverwrites: [
+                    {
+                        id: interaction.guild.roles.everyone.id,
+                        deny: [PermissionsBitField.Flags.ViewChannel],
+                    },
+                    {
+                        id: interaction.user.id,
+                        allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+                    },
+                ],
+            });
+
+            const embed = new EmbedBuilder()
+                .setColor('#7c6bff')
+                .setTitle('Ticket erstellt')
+                .setDescription(`Hallo ${interaction.user}, dein Support-Ticket wurde geöffnet. Ein Moderator wird sich in Kürze um dein Anliegen kümmern.\n\n**Grund:** ${reasonText}`)
+                .setTimestamp();
+
+            const row = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('claim_ticket')
+                        .setLabel('Ticket claimen')
+                        .setStyle(ButtonStyle.Success),
+                    new ButtonBuilder()
+                        .setCustomId('delete_ticket')
+                        .setLabel('Ticket löschen')
+                        .setStyle(ButtonStyle.Danger)
+                );
+
+            await ticketChannel.send({ embeds: [embed], components: [row] }).catch(() => {});
+            await interaction.update({ content: `Dein Ticket wurde in ${ticketChannel} erstellt.`, components: [] }).catch(() => {});
+            
+            const logEmbed = new EmbedBuilder()
+                .setColor('#7c6bff')
+                .setTitle('Ticket geöffnet')
+                .setDescription(`**User:** ${interaction.user}\n**Channel:** ${ticketChannel}\n**Grund:** ${reasonText}`)
+                .setTimestamp();
+            await sendLog(interaction.guild, settings, logEmbed);
+            return;
+        }
+    }
+
     if (!interaction.isChatInputCommand()) return;
 
     const { commandName } = interaction;
@@ -105,13 +256,9 @@ client.on('interactionCreate', async interaction => {
         const target = interaction.options.getMember('target');
         const reason = interaction.options.getString('reason') || 'Kein Grund angegeben';
 
-        if (!target) {
-            return interaction.reply({ content: 'Nutzer konnte nicht gefunden werden.', ephemeral: true });
-        }
+        if (!target) return interaction.reply({ content: 'Nutzer konnte nicht gefunden werden.', ephemeral: true });
 
-        if (!warnings.has(target.id)) {
-            warnings.set(target.id, []);
-        }
+        if (!warnings.has(target.id)) warnings.set(target.id, []);
         warnings.get(target.id).push(reason);
 
         const count = warnings.get(target.id).length;
@@ -121,18 +268,26 @@ client.on('interactionCreate', async interaction => {
             .setDescription(`${target} wurde verwarnt.\n\n**Grund:** ${reason}\n**Verwarnungen insgesamt:** ${count}`)
             .setTimestamp();
 
-        await interaction.reply({ embeds: [embed] });
+        await interaction.reply({ embeds: [embed] }).catch(() => {});
 
-        if (count >= 3) {
-            if (target.kickable) {
-                await target.kick('Automatische Eskalation nach 3 Verwarnungen');
-                const kickEmbed = new EmbedBuilder()
-                    .setColor('#ff6f91')
-                    .setTitle('Automod Eskalation')
-                    .setDescription(`${target} wurde nach Erreichen von 3 Verwarnungen automatisch gekickt.`)
-                    .setTimestamp();
-                await interaction.channel.send({ embeds: [kickEmbed] });
-            }
+        const logEmbed = new EmbedBuilder()
+            .setColor('#f5c76b')
+            .setTitle('User verwarnt')
+            .setDescription(`**User:** ${target}\n**Moderator:** ${interaction.user}\n**Grund:** ${reason}\n**Gesamt:** ${count}`)
+            .setTimestamp();
+        await sendLog(interaction.guild, settings, logEmbed);
+
+        if (count >= 3 && target.kickable) {
+            await target.kick('Automatische Eskalation nach 3 Verwarnungen').catch(() => {});
+            const kickEmbed = new EmbedBuilder().setColor('#ff6f91').setTitle('Automod Eskalation').setDescription(`${target} wurde nach Erreichen von 3 Verwarnungen automatisch gekickt.`).setTimestamp();
+            await interaction.channel.send({ embeds: [kickEmbed] }).catch(() => {});
+            
+            const logKick = new EmbedBuilder()
+                .setColor('#ff6f91')
+                .setTitle('Automod: User gekickt')
+                .setDescription(`**User:** ${target}\n**Grund:** Automatische Eskalation nach 3 Verwarnungen`)
+                .setTimestamp();
+            await sendLog(interaction.guild, settings, logKick);
         }
     }
 
@@ -140,82 +295,60 @@ client.on('interactionCreate', async interaction => {
         const target = interaction.options.getMember('target');
         const reason = interaction.options.getString('reason') || 'Kein Grund angegeben';
 
-        if (!target) {
-            return interaction.reply({ content: 'Nutzer konnte nicht gefunden werden.', ephemeral: true });
-        }
-        if (!target.kickable) {
-            return interaction.reply({ content: 'Dieser Nutzer kann nicht gekickt werden.', ephemeral: true });
-        }
+        if (!target) return interaction.reply({ content: 'Nutzer konnte nicht gefunden werden.', ephemeral: true });
+        if (!target.kickable) return interaction.reply({ content: 'Dieser Nutzer kann nicht gekickt werden.', ephemeral: true });
 
-        await target.kick(reason);
+        await target.kick(reason).catch(() => {});
 
-        const embed = new EmbedBuilder()
+        const embed = new EmbedBuilder().setColor('#ff6f91').setTitle('Nutzer gekickt').setDescription(`${target} wurde erfolgreich gekickt.\n\n**Grund:** ${reason}`).setTimestamp();
+        await interaction.reply({ embeds: [embed] }).catch(() => {});
+        
+        const logEmbed = new EmbedBuilder()
             .setColor('#ff6f91')
-            .setTitle('Nutzer gekickt')
-            .setDescription(`${target} wurde erfolgreich gekickt.\n\n**Grund:** ${reason}`)
+            .setTitle('User gekickt')
+            .setDescription(`**User:** ${target}\n**Moderator:** ${interaction.user}\n**Grund:** ${reason}`)
             .setTimestamp();
-        await interaction.reply({ embeds: [embed] });
+        await sendLog(interaction.guild, settings, logEmbed);
     }
 
     if (commandName === 'ban') {
         const target = interaction.options.getMember('target');
         const reason = interaction.options.getString('reason') || 'Kein Grund angegeben';
 
-        if (!target) {
-            return interaction.reply({ content: 'Nutzer konnte nicht gefunden werden.', ephemeral: true });
-        }
-        if (!target.bannable) {
-            return interaction.reply({ content: 'Dieser Nutzer kann nicht gebannt werden.', ephemeral: true });
-        }
+        if (!target) return interaction.reply({ content: 'Nutzer konnte nicht gefunden werden.', ephemeral: true });
+        if (!target.bannable) return interaction.reply({ content: 'Dieser Nutzer kann nicht gebannt werden.', ephemeral: true });
 
-        await target.ban({ reason });
+        await target.ban({ reason }).catch(() => {});
 
-        const embed = new EmbedBuilder()
+        const embed = new EmbedBuilder().setColor('#ff6f91').setTitle('Nutzer gebannt').setDescription(`${target} wurde erfolgreich gebannt.\n\n**Grund:** ${reason}`).setTimestamp();
+        await interaction.reply({ embeds: [embed] }).catch(() => {});
+        
+        const logEmbed = new EmbedBuilder()
             .setColor('#ff6f91')
-            .setTitle('Nutzer gebannt')
-            .setDescription(`${target} wurde erfolgreich gebannt.\n\n**Grund:** ${reason}`)
+            .setTitle('User gebannt')
+            .setDescription(`**User:** ${target}\n**Moderator:** ${interaction.user}\n**Grund:** ${reason}`)
             .setTimestamp();
-        await interaction.reply({ embeds: [embed] });
+        await sendLog(interaction.guild, settings, logEmbed);
     }
 
     if (commandName === 'ticket') {
-        const ticketChannel = await interaction.guild.channels.create({
-            name: `ticket-${interaction.user.username}`,
-            type: ChannelType.GuildText,
-            permissionOverwrites: [
-                {
-                    id: interaction.guild.roles.everyone.id,
-                    deny: [PermissionsBitField.Flags.ViewChannel],
-                },
-                {
-                    id: interaction.user.id,
-                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
-                },
-            ],
-        });
+        if (settings.tickets === false) {
+            return interaction.reply({ content: 'Das Ticketsystem ist auf diesem Server derzeit deaktiviert.', ephemeral: true });
+        }
 
-        const embed = new EmbedBuilder()
-            .setColor('#7c6bff')
-            .setTitle('Ticket erstellt')
-            .setDescription(`Hallo ${interaction.user}, dein Support-Ticket wurde geöffnet. Ein Moderator wird sich in Kürze um dein Anliegen kümmern.`)
-            .setTimestamp();
-
-        await ticketChannel.send({ embeds: [embed] });
-        await interaction.reply({ content: `Dein Ticket wurde in ${ticketChannel} erstellt.`, ephemeral: true });
+        const menu = new StringSelectMenuBuilder()
+            .setCustomId('ticket_reason')
+            .setPlaceholder('Wähle einen Grund aus...')
+            .addOptions(
+                new StringSelectMenuOptionBuilder().setLabel('Allgemeiner Support').setValue('support'),
+                new StringSelectMenuOptionBuilder().setLabel('Nutzer melden').setValue('report'),
+                new StringSelectMenuOptionBuilder().setLabel('Bug Report').setValue('bug'),
+                new StringSelectMenuOptionBuilder().setLabel('Sonstiges').setValue('other')
+            );
+        
+        const row = new ActionRowBuilder().addComponents(menu);
+        await interaction.reply({ content: 'Bitte wähle den Grund für dein Ticket:', components: [row], ephemeral: true }).catch(() => {});
     }
-});
-
-app.get('/api/status', (req, res) => {
-    res.json({
-        bot: client.user ? client.user.tag : 'Offline',
-        servers: client.guilds.cache.size,
-        users: client.guilds.cache.reduce((a, g) => a + g.memberCount, 0),
-        ping: client.ws.ping
-    });
-});
-
-app.listen(3000, () => {
-    console.log('Dashboard läuft auf http://localhost:3000');
 });
 
 client.login(process.env.DISCORD_TOKEN);

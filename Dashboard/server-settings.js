@@ -7,7 +7,6 @@ const tickets = document.getElementById("tickets");
 const inviteBlocker = document.getElementById("inviteBlocker");
 const maxMentions = document.getElementById("maxMentions");
 const logChannel = document.getElementById("logChannel");
-const welcomeMessage = document.getElementById("welcomeMessage");
 
 const saveBtn = document.getElementById("saveBtn");
 const saveStatus = document.getElementById("saveStatus");
@@ -22,8 +21,7 @@ async function loadSettings() {
     tickets.checked = data.tickets;
     inviteBlocker.checked = data.inviteBlocker;
     maxMentions.value = data.maxMentions;
-    logChannel.value = data.logChannel;
-    welcomeMessage.value = data.welcomeMessage;
+    logChannel.value = data.logChannel || "";
 }
 
 saveBtn.addEventListener("click", async () => {
@@ -32,8 +30,7 @@ saveBtn.addEventListener("click", async () => {
         tickets: tickets.checked,
         inviteBlocker: inviteBlocker.checked,
         maxMentions: Number(maxMentions.value),
-        logChannel: logChannel.value,
-        welcomeMessage: welcomeMessage.value
+        logChannel: logChannel.value
     };
 
     const res = await fetch(`/api/server/${guildId}/settings`, {
